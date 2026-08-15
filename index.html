@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Football Hub</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:#f3f5f8;
+ color:#172033;
+ padding-bottom:80px
+}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.header{
+ position:fixed;
+ top:0;
+ left:0;
+ right:0;
+ height:64px;
+ background:white;
+ border-bottom:1px solid #ddd;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ padding:8px 14px;
+ z-index:1000
+}
+.logo{font-weight:800;font-size:19px}
+.headerRight{display:flex;gap:6px;align-items:center}
+.container{
+ max-width:1100px;
+ margin:auto;
+ padding:82px 12px 25px
+}
+.card{
+ background:white;
+ border:1px solid #e0e4ea;
+ border-radius:14px;
+ padding:14px;
+ margin-bottom:12px
+}
+.btn{
+ border:0;
+ border-radius:9px;
+ padding:9px 13px;
+ background:#e9edf3
+}
+.blue{background:#1769ff;color:white}
+.green{background:#11a36a;color:white}
+.red{background:#e53935;color:white}
+.orange{background:#ff9800;color:white}
+.tabs{
+ display:flex;
+ gap:7px;
+ overflow-x:auto;
+ margin:15px 0
+}
+.tab{
+ white-space:nowrap;
+ padding:10px 13px;
+ border:1px solid #ddd;
+ background:white;
+ border-radius:9px
+}
+.tab.active{
+ background:#1769ff;
+ color:white;
+ border-color:#1769ff
+}
+.search{
+ display:flex;
+ gap:7px;
+ margin-bottom:15px
+}
+.search>*{flex:1}
+input,textarea,select{
+ width:100%;
+ border:1px solid #ccd2dc;
+ border-radius:9px;
+ padding:11px;
+ background:white
+}
+textarea{
+ min-height:120px;
+ resize:vertical
+}
+.grid{
+ display:grid;
+ grid-template-columns:repeat(2,1fr);
+ gap:10px
+}
+.modal{
+ position:fixed;
+ inset:0;
+ background:rgba(0,0,0,.65);
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ padding:12px;
+ z-index:5000
+}
+.modal.hidden{display:none}
+.modalBox{
+ background:white;
+ width:min(400px,100%);
+ border-radius:16px;
+ padding:20px
+}
+.close{
+ float:right;
+ border:0;
+ background:#eee;
+ border-radius:8px;
+ padding:7px 10px
+}
+.form{
+ display:grid;
+ gap:12px;
+ margin-top:15px;
+}
+.error{
+ color:#e53935;
+ font-size:13px;
+ display:none;
+}
+.auth-toggle{
+ margin-top:10px;
+ text-align:center;
+ font-size:14px;
+}
+.auth-toggle span{
+ color:#1769ff;
+ cursor:pointer;
+ font-weight:bold;
+}
+@media(max-width:650px){
+ .grid{grid-template-columns:1fr}
+ .search{flex-direction:column}
+ .logo{font-size:16px}
+ .headerRight .btn{
+  padding:7px 8px;
+  font-size:12px
+ }
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+<div class="logo">⚽ Football Hub</div>
+<div class="headerRight">
+ <div id="userBox"></div>
+ <button id="adminBtn" class="btn">⚙️ Admin</button>
+</div>
+</header>
+
+<div class="container">
+<main id="main">
+<h1>⚽ Football Hub</h1>
+<p>Theo dõi giải đấu, trận đấu, BXH, tin tức và cộng đồng.</p>
+
+<div class="tabs">
+<button class="tab active" data-tab="matches">⚽ Giải đấu</button>
+<button class="tab" data-tab="standings">📊 BXH</button>
+<button class="tab" data-tab="schedule">📅 Lịch</button>
+<button class="tab" data-tab="news">📰 Tin tức</button>
+<button class="tab" data-tab="community">👥 Cộng đồng</button>
+</div>
+
+<div class="search">
+<input id="search" placeholder="🔍 Tìm đội bóng">
+<select id="competitionFilter">
+<option value="all">Tất cả giải</option>
+</select>
+<select id="statusFilter">
+<option value="all">Tất cả trạng thái</option>
+<option value="live">🟢 Đang diễn ra</option>
+<option value="upcoming">🔵 Sắp diễn ra</option>
+<option value="finished">⚫ Đã kết thúc</option>
+</select>
+</div>
+
+<div id="content" class="card">
+ <p>Nội dung trang chủ sẽ hiển thị ở đây...</p>
+</div>
+</main>
+</div>
+
+<!-- MODAL ĐĂNG KÝ / ĐĂNG NHẬP -->
+<div id="authModal" class="modal hidden">
+  <div class="modalBox">
+    <button id="closeAuth" class="close">✕</button>
+    <h2 id="modalTitle">Đăng Ký Tài Khoản</h2>
+    
+    <form id="authForm" class="form">
+      <div>
+        <label>Tên tài khoản:</label>
+        <input type="text" id="usernameInput" required placeholder="Nhập tên tài khoản...">
+      </div>
+      <div>
+        <label>Mật khẩu:</label>
+        <input type="password" id="passwordInput" required placeholder="Nhập mật khẩu...">
+      </div>
+      <div id="errorMsg" class="error"></div>
+      <button type="submit" id="submitAuthBtn" class="btn blue">Đăng Ký</button>
+    </form>
+
+    <div class="auth-toggle">
+      <span id="toggleText">Đã có tài khoản? Đăng nhập</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// Quản lý trạng thái
+let isLoginMode = false;
+let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+
+// DOM Elements
+const userBox = document.getElementById('userBox');
+const authModal = document.getElementById('authModal');
+const closeAuth = document.getElementById('closeAuth');
+const authForm = document.getElementById('authForm');
+const modalTitle = document.getElementById('modalTitle');
+const submitAuthBtn = document.getElementById('submitAuthBtn');
+const toggleText = document.getElementById('toggleText');
+const usernameInput = document.getElementById('usernameInput');
+const passwordInput = document.getElementById('passwordInput');
+const errorMsg = document.getElementById('errorMsg');
+
+// Cập nhật giao diện thanh Header
+function renderUserBox() {
+  if (currentUser) {
+    userBox.innerHTML = `
+      <span>Xin chào, <b>${currentUser.username}</b></span>
+      <button onclick="logout()" class="btn red">Đăng xuất</button>
+    `;
+  } else {
+    userBox.innerHTML = `
+      <button onclick="openModal(false)" class="btn green">Đăng Ký</button>
+      <button onclick="openModal(true)" class="btn blue">Đăng Nhập</button>
+    `;
+  }
+}
+
+// Mở Modal
+function openModal(loginMode) {
+  isLoginMode = loginMode;
+  errorMsg.style.display = 'none';
+  usernameInput.value = '';
+  passwordInput.value = '';
+  
+  if (isLoginMode) {
+    modalTitle.innerText = "Đăng Nhập";
+    submitAuthBtn.innerText = "Đăng Nhập";
+    toggleText.innerText = "Chưa có tài khoản? Đăng ký ngay";
+  } else {
+    modalTitle.innerText = "Đăng Ký Tài Khoản";
+    submitAuthBt
